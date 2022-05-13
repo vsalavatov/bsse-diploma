@@ -18,6 +18,25 @@
 \usepackage{minted} % для примеров кода (требует параметра -shell-escape)
 \usemintedstyle{bw}
 
+\usepackage{epigraph}
+
+\usepackage{biblatex}
+\usepackage{xurl}
+\addbibresource{refs.bib}
+
+\newcommand{\todo}[1]{\textbf{\textcolor{red}{(TODO: #1)}}}
+\newcommand{\code}[1]{\mbox{\texttt{#1}}}
+\newcommand{\makefig}[3]{
+  \begin{figure}[ht]
+    \begin{center}
+      \includegraphics[width=#2,keepaspectratio]{#1}
+      \caption{#3}
+    \end{center}
+  \end{figure}
+}
+
+
+\graphicspath{{../images/}}
 
 \begin{document}
 
@@ -32,22 +51,18 @@
 
 \include{items/problem}
 
-\include{items/chap1}
+\include{items/overview}
 
-\include{items/chap2}
+\include{items/chap_solution}
 
-\include{items/chap3}
+\include{items/chap_solution_details}
 
-\include{items/chap4}
+\include{items/chap_usage_examples}
+
+\include{items/chap_results}
 
 \include{items/concl}
 
 
-
-% Аргумент {1} ниже включает переопределенный стиль с выравниванием слева
-\begin{thebibliography}{1}
-\bibitem{voc} D.W. Griffin, J.S.Lim. Multiband excitation vocoder. IEEE ASSP-36 (8), 1988, pp. 1223-1235.
-\bibitem{vo2} A. Golovnev, A. S. Kulikov, I. Mihajlin. Families with Infants: Speeding Up Algorithms for NP-Hard Problems Using FFT., ACM Transactions on Algorithms, 12:3, 2016.
-\bibitem{ij-sdk} IntelliJ Platform SDK﻿. URL: \url{https://plugins.jetbrains.com/docs/intellij/welcome.html} (дата обр. 10.02.2022).
-\end{thebibliography}
+\include{bib.tex}
 \end{document}
