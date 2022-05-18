@@ -11,6 +11,7 @@
 \usepackage{biblatex}
 \usepackage{xurl}
 \usepackage{qrcode}
+\usepackage{tikz}
 
 \newcommand{\todo}[1]{\textbf{\textcolor{red}{(TODO: #1)}}}
 \newcommand{\code}[1]{\mbox{\texttt{#1}}}
@@ -61,7 +62,7 @@
 
   {\small Научный руководитель: профессор, д.ф.-м.н. А.\,С.\,Куликов}
 
-  ДАТА ЗАЩИТЫ
+  14 июня 2022
   \end{center}
 
 
@@ -82,18 +83,58 @@
 \begin{frame}
 \frametitle{Введение в предметную область}
 
-\begin{itemize}
+
 % \item О чём здесь вообще речь? Для чего вообще этим всем стоит заниматься?
 % \item В чём актуальность работы?
 % \item Кто ещё этим занимается, с кем мы будем сравниваться?
 % \item Этот слайд необходим для того, чтобы постановка задачи была понятнее.
 % \item Вряд ли стоит делать больше двух таких слайдов, иначе вы не успеете рассказать о своей работе.
 % \item На введение в предметную область должно уйти не более 15\% времени вашего доклада.
-\item Kotlin Multiplatform
-\item Файловые системы --- платформоспецифичны
-\item Хотим писать код в общем модуле
-\item Как работать с файловыми хранилищами в веб-браузере?
+\begin{columns}
+  \column{0.62\linewidth}
+    \begin{itemize}
+    \item Kotlin Multiplatform
+    \item Файловые системы
+    \item Хотим писать код в общем модуле
+    \item Как работать с файловыми хранилищами в веб-браузере?
+    \end{itemize}
+    
+   \column{0.38\linewidth}
+    \centering
+    \includegraphics[width=1.07\textwidth,keepaspectratio]{kotlin-multiplatform}
+ \end{columns} 
+\end{frame}
+
+\begin{frame}{Обзор основных аналогов}
+
+\begin{itemize}
+  \item okio
+    \begin{itemize}
+      \item[+] мультиплатформенность
+      \item[+] активно развивается
+      \item[+] \texttt{FileSystem}...
+      
+        \item[-] ...но для JS требует Node.js
+      
+    \end{itemize}
+  \pause 
+  \item korlibs/korio
+    \begin{itemize}
+    \item[+] мультиплатформенность
+    \item[+] интерфейс \texttt{VFS}, несколько реализаций
+    
+    \item[-] последнее обновление почти год назад
+    \item[-] перегруженность \texttt{VFS}
+    \item[\textpm] для JS есть \texttt{VFS} на основе \texttt{localStorage}
+    \end{itemize}
 \end{itemize}
+\pause
+\tikz[remember picture, overlay] \node[anchor=north east] at ([shift={(-0.5,-0.5)}]current page.north east) {\includegraphics[width=0.35\textwidth]{cloud-services}};
+%\begin{tikzpicture}[remember picture,overlay]
+  %\tikzset{shift={(current page.center)}}
+  %\includegraphics[width=0.4\textwidth]{cloud-services}
+  % the picture
+%\end{tikzpicture}
 \end{frame}
 
 \begin{frame}
@@ -126,15 +167,17 @@
 \includegraphics[width=6cm,keepaspectratio]{vfsnode-folder-file}
 \hspace{0.2cm}
 \includegraphics[width=7cm,keepaspectratio]{vfs}
+
+\scriptsize Все методы (кроме \texttt{representPath}) помечены \texttt{suspend}
 \end{center}
 \end{frame}
 
-\begin{frame}{SystemFS}
-\begin{center}
-\includegraphics[width=11cm,keepaspectratio]{systemfs-detailed}\\
-\small доступно на JVM и Android
-\end{center}
-\end{frame}
+%\begin{frame}{SystemFS}
+%\begin{center}
+%\includegraphics[width=11cm,keepaspectratio]{systemfs-detailed}\\
+%\scriptsize доступно на JVM и Android
+%\end{center}
+%\end{frame}
 
 \begin{frame}{GoogleDriveFS}
 \begin{center}
@@ -142,22 +185,125 @@
 \end{center}
 \end{frame}
 
-\begin{frame}{SqliteFS}
-  \begin{itemize}
-    \item SQL-эмуляция файловой системы
-    \item Две таблицы: папки и файлы, у файлов есть бинарное содержимое (\texttt{blob})
-    \item Доступно только на Android
-  \end{itemize}
+%\begin{frame}{SqliteFS}
+%  \begin{itemize}
+%    \item SQL-эмуляция файловой системы
+%    \item Две таблицы: папки и файлы, у файлов есть бинарное содержимое (\texttt{blob})
+%    \item Доступно только на Android
+%  \end{itemize}
+%\end{frame}
+
+%\begin{frame}{Инварианты и гарантии}
+%  \begin{itemize}
+%    \item Родительская папка корня --- сам корень
+%    \item Все методы бросают исключения только типов-наследников VFSException (и, возможно, помеченными некоторыми другими метками)
+%    \item Удаление непустой папки только с установленным флагом \texttt{recursively}
+%    \item Глобальных ограничений на имена файлов и папок не накладывается --- это может контролировать пользовательский код
+%  \end{itemize}
+%\end{frame}
+
+
+\begin{frame}{Расширения}
+  \begin{center}
+    \includegraphics[width=6cm,keepaspectratio]{streamingio}
+    %\hspace{0.2cm}
+    %\includegraphics[width=5cm,keepaspectratio]{filewstreamingio}
+  \end{center}
+  \small SystemFS и GoogleDriveFS реализуют потоковое чтение и запись
+\end{frame}
+  
+
+\begin{frame}{Сводная таблица поддержанных возможностей}
+\centering
+\small
+\begin{tabular}{|c|c|c|c|c|}
+  \cline{2-5}
+  \multicolumn{1}{c|}{} & \multicolumn{3}{c|}{Платформа} & Расширения \\
+  \hline 
+    Название & JVM & Android & JS (browser) & \code{StreamingIO} \\
+  \hline 
+    \code{SystemFS} & да & да &  & да \\
+  \hline 
+    \code{GoogleDriveFS} & да & да & да & да \\
+  \hline 
+    \code{SqliteFS} &  & да &  &  \\
+  \hline
+\end{tabular}      
+%\begin{tabular}{lccc}
+%  Хранилище/Платформа & JVM & Android & Web \\
+%\hline\hline
+%  SystemFS\footnotemark{} & + & + &  \\
+%  GoogleDriveFS^\footnotemark[\value{footnote}] & + & + & + \\
+%  SqliteFS &  & + & \\
+%\end{tabular}
+% \footnotetext{есть поддержка \texttt{StreamingIO}}
 \end{frame}
 
-\begin{frame}{Инварианты и гарантии}
-  \begin{itemize}
-    \item Родительская папка корня --- сам корень
-    \item Все методы бросают исключения только типов-наследников VFSException (и, возможно, помеченными некоторыми другими метками)
-    \item Удаление непустой папки только с установленным флагом \texttt{recursively}
-    \item Глобальных ограничений на имена файлов и папок не накладывается --- это может контролировать пользовательский код
-  \end{itemize}
+\begin{frame}{Приложения на основе библиотеки}
+\begin{itemize}
+  \item Multieditor\footnote{\url{https://github.com/vsalavatov/multieditor}} --- мультиплатформенный текстовый редактор, работающий на платформах JVM, Android, Web
+  \item gdrive-cli\footnote{\url{https://github.com/vsalavatov/gdrive-cli}} --- интерфейс командной строки для работы с содержимым Google Drive, позволяет скачивать и загружать файлы в потоковом режиме
+\end{itemize}
 \end{frame}
+
+\begin{frame}{Multieditor}
+\begin{itemize}
+  \item Вся логика работы с файлами в общем модуле
+  \item Код графических интерфейсов для JVM и Android написан с помощью Compose в общем для них модуле
+  \item Код графического интерфейса для JS (browser) написан на Compose for Web
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Multieditor JVM}
+  \begin{center}
+    \only<1>{
+      \includegraphics[width=0.92\textwidth,keepaspectratio]{multieditor-jvm-start}
+    }
+    \only<2>{
+      \includegraphics[width=0.45\textwidth,keepaspectratio]{multieditor-jvm-signin}
+    }
+    \only<3>{
+      \includegraphics[width=0.92\textwidth,keepaspectratio]{multieditor-jvm}
+    }
+  \end{center}
+\end{frame}
+
+
+\begin{frame}{Результаты}
+  \begin{enumerate}
+  \item Реализована библиотека для мультиплатформенной работы с файловыми хранилищами
+  \item Поддержаны три хранилища, из которых одно облачное
+  \item На основе библиотеки реализовано мультиплатформенное приложение
+  \end{enumerate}
+
+  \vspace{2mm}\hrule\vspace{1mm}
+    \begin{columns}
+      \column{0.85\linewidth}
+      \begin{center}
+       vmsalavatov@gmail.com, \texttt{@vsalavatov} \\ 
+        \url{https://github.com/vsalavatov/multifs}
+      \end{center}
+      
+      \column{0.15\linewidth}
+      \begin{center}
+        \scalebox{0.82}{\qrcode{https://github.com/vsalavatov/multifs}}
+      \end{center}
+    \end{columns}  
+  
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% допы
+
+\newcounter{finalframe}
+\setcounter{finalframe}{\value{framenumber}}
+
+\begin{frame}
+  \begin{center}
+  Дополнительные слайды
+  \end{center}
+\end{frame}
+
 
 \begin{frame}[fragile]
 \frametitle{Как этим пользоваться. Общий код}
@@ -171,8 +317,8 @@ suspend fun printFiles(folder: Folder) {
     }
   }
 }
-suspend fun printStorage(fs: Storage) {
-  printFiles(fs.root)
+suspend fun printStorages(storages: List<Storage>) {
+  storages.forEach { printFiles(it.root) }
 }
 \end{minted}
 \end{frame}
@@ -180,35 +326,24 @@ suspend fun printStorage(fs: Storage) {
 \begin{frame}[fragile]
 \frametitle{Как этим пользоваться. Клиентский код}
 \begin{minted}[fontsize=\footnotesize]{kotlin}
-val creds: GoogleAppCredentials = ...
-suspend fun main() {
-  val systemfs = SystemFS(
-    Paths.get(".") // корень - рабочая директория
-  )
+fun getStorages(): List<Storage> {
+  val systemfs = SystemFS()
   val googleAuth = HttpCallbackGoogleAuthorizationRequester(
-                    creds, GoogleDriveAPI.Companion.DriveScope.General
+                    GoogleAppCredentials(CLIENT_ID, SECRET), 
+                    GoogleDriveAPI.Companion.DriveScope.General
                   )
   val gdrivefs = GoogleDriveFS(GoogleDriveAPI(googleAuth))
-
-  printStorage(systemfs)
-  printStorage(gdrivefs)
+  return listOf(systemfs, gdrivefs)
+}
+suspend fun main() {
+  printStorages(getStorages())
 }
 \end{minted}
-\end{frame}
-
-\begin{frame}{Расширения}
-  \begin{center}
-    \includegraphics[width=6cm,keepaspectratio]{streamingio}
-    %\hspace{0.2cm}
-    %\includegraphics[width=5cm,keepaspectratio]{filewstreamingio}
-  \end{center}
-  \small SystemFS и GoogleDriveFS реализуют потоковое чтение и запись
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{Как этим пользоваться. Расширения}
 \begin{minted}[fontsize=\footnotesize]{kotlin}
-// typealias Storage = VFS<out {File & StreamingIO}, out Folder>
 suspend fun <T> upload(fs: VFS<out T, out Folder>)
         where T : File, T : StreamingIO {
   val file = (fs.root / "folder" / "subfolder" % "file.txt") as T
@@ -218,47 +353,30 @@ suspend fun <T> upload(fs: VFS<out T, out Folder>)
   file.writeStream(data)
 }
 ...
-upload(systemfs)
 upload(gdrivefs)
-// upload(sqlitefs)
 \end{minted}
 \end{frame}
   
-
-\begin{frame}{Сводная таблица поддержанных возможностей}
-\centering
-\begin{tabular}{lccc}
-  Хранилище/Платформа & JVM & Android & Web \\
-\hline\hline
-  SystemFS\footnotemark{} & + & + &  \\
-  GoogleDriveFS^\footnotemark[\value{footnote}] & + & + & + \\
-  SqliteFS &  & + & \\
-\end{tabular}
-\footnotetext{есть поддержка \texttt{StreamingIO}}
-\end{frame}
-
-\begin{frame}{Приложения на основе библиотеки}
-\begin{itemize}
-  \item Multieditor --- мультиплатформенный текстовый редактор, работающий на платформах JVM, Android, Web
-  \item gdrive-cli --- интерфейс командной строки для работы с содержимым Google Drive, позволяет скачивать и загружать файлы в потоковом режиме
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Контакты}
-  %\begin{enumerate}
-  %\item 
-  %\item Проверена 
-  %\item ура победа
-  %\end{enumerate}
-  %\vspace{1mm}\hrule\vspace{1mm}
-  
+\begin{frame}{Multieditor Android}
   \begin{center}
-  Вадим Салаватов, vmsalavatov@gmail.com\\ 
-  \url{https://github.com/vsalavatov/multifs} \hspace{0.44em}
-  \scalebox{0.82}{\qrcode{https://github.com/vsalavatov/multifs}}
+    \only<1>{
+      \includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android-signin}
+    }
+    \only<2>{
+      \includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android}
+    }
   \end{center}
 \end{frame}
-  
+
+\begin{frame}{Multieditor Web}
+  \begin{center}
+    \only<1>{
+      \includegraphics[width=0.92\textwidth,keepaspectratio]{multieditor-web}
+    }
+  \end{center}
+\end{frame}
+
+\setcounter{framenumber}{\value{finalframe}}
 
 %\begin{frame}[fragile]
 %\frametitle{Задача 2: код на языке программирования\footnote{Увлекаться кодом на слайдах не стоит, зато структурные и иные диаграммы обычно смотрятся хорошо.}}

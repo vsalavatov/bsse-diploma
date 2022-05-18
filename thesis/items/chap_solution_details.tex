@@ -1,23 +1,32 @@
 \section{Детали реализации} \label{solution-details}
 
 \subsection{Структура проекта}
-    \todo{сказать про каждый модуль}
-
-    \todo{commonJvmAndroid}
+    \makefig{modules}{0.5\textwidth}{\label{fig:modules}
+        Структура модулей проекта \code{multifs}.
+    }
+    
+    Библиотека \code{multifs}\cite{gh-multifs} разделена на пять модулей, представленных на рисунке~\ref{fig:modules}. Модуль Common содержит определения базовых интерфейсов библиотеки, а также основную часть логики для поддержки Google Drive (\code{GoogleDriveAPI} и \code{GoogleDriveFS}). Модуль CommonJvmAndroid нужен для реализации поддержки \code{SystemFS}, так как необходимая для этого функциональность доступна на обеих платформах JVM и Android. Модули JVM и JS (browser) содержат реализации интерфейса \code{GoogleAuthorizationRequester}, обеспечивающих получение кода доступа к Google Drive пользователя. В модуле Android, помимо реализации этого интерфейса, содержится также реализация \code{SqliteFS}.
+    
 %subsection
 
 \subsection{Сборка проекта}
-    \todo{про gradle}
+    Сборка проекта осуществляется с помощью системы автоматической сборки Gradle\cite{gradle} версии 7.1, используемая версия JDK --- OpenJDK 11. Скрипт сборки написан в файле \code{build.gradle.kts} в корне проекта. Используемая версия языка Kotlin --- 1.6.20.
 
-    \todo{про maven и локальный репозиторий}
+    Осуществить сборку и опубликовать артефакты в локальный maven-репозиторий можно с помощью команды \code{./gradlew publishToMavenLocal}.
 %subsection
 
-\subsection{\code{SystemFS}}
-    \todo{реализует также \code{StreamingIO}}
+%\subsection{\code{SystemFS}}
+%    \todo{реализует также \code{StreamingIO}}
 %subsection
 
 \subsection{\code{GoogleDriveFS}}
     \subsubsection{\code{GoogleDriveAPI}}
+        \code{GoogleDriveAPI} использует HTTP-клиент библиотеки Ktor с подключаемым модулем \code{Auth}, который самостоятельно обеспечивает добавление HTTP-заголовка \code{Bearer} с ключом доступа и при необходимости вызывает методы для получения или обновления этого ключа.
+
+        Так как большинство реализованных методов по своей механике не сильно друг от друга отличаются, здесь будет дан обзор наиболее интересных из них. 
+
+        \paragraph{Метод list.} В качестве аргумента принимает идентификатор папки, список детей которой необходимо получить. 
+
         \todo{обзор реализованных методов}
 
         \todo{в том числе StreamingIO}
