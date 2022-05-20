@@ -60,7 +60,7 @@
 
   Выпускная квалификационная работа
 
-  {\small Научный руководитель: профессор, д.ф.-м.н. А.\,С.\,Куликов}
+  {\small Научный руководитель: \todo{} В.\,Н.\,Брагилевский}
 
   14 июня 2022
   \end{center}
@@ -113,9 +113,7 @@
       \item[+] мультиплатформенность
       \item[+] активно развивается
       \item[+] \texttt{FileSystem}...
-      
-        \item[-] ...но для JS требует Node.js
-      
+      \item[-] ...но для JS требует Node.js
     \end{itemize}
   \pause 
   \item korlibs/korio
@@ -129,7 +127,7 @@
     \end{itemize}
 \end{itemize}
 \pause
-\tikz[remember picture, overlay] \node[anchor=north east] at ([shift={(-0.5,-0.5)}]current page.north east) {\includegraphics[width=0.35\textwidth]{cloud-services}};
+\tikz[remember picture, overlay] \node[anchor=north east] at ([shift={(-0.6,-0.6)}]current page.north east) {\includegraphics[width=0.38\textwidth]{cloud-services}};
 %\begin{tikzpicture}[remember picture,overlay]
   %\tikzset{shift={(current page.center)}}
   %\includegraphics[width=0.4\textwidth]{cloud-services}
@@ -181,7 +179,11 @@
 
 \begin{frame}{GoogleDriveFS}
 \begin{center}
-\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch}
+\only<1>{\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch}}%
+\only<2>{\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch-ktor}}%
+\only<3>{\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch-api}}%
+\only<4>{\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch-fs}}%
+\only<5>{\includegraphics[width=11cm,keepaspectratio]{gdrive-multiplatform-arch-authorizer}}%
 \end{center}
 \end{frame}
 
@@ -306,7 +308,7 @@
 
 
 \begin{frame}[fragile]
-\frametitle{Как этим пользоваться. Общий код}
+\frametitle{Пример. Общий код}
 \begin{minted}[fontsize=\footnotesize]{kotlin}
 typealias Storage = VFS<out File, out Folder>
 suspend fun printFiles(folder: Folder) {
@@ -324,7 +326,7 @@ suspend fun printStorages(storages: List<Storage>) {
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Как этим пользоваться. Клиентский код}
+\frametitle{Пример. Клиентский код}
 \begin{minted}[fontsize=\footnotesize]{kotlin}
 fun getStorages(): List<Storage> {
   val systemfs = SystemFS()
@@ -342,7 +344,7 @@ suspend fun main() {
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Как этим пользоваться. Расширения}
+\frametitle{Пример. Расширения}
 \begin{minted}[fontsize=\footnotesize]{kotlin}
 suspend fun <T> upload(fs: VFS<out T, out Folder>)
         where T : File, T : StreamingIO {
@@ -358,14 +360,12 @@ upload(gdrivefs)
 \end{frame}
   
 \begin{frame}{Multieditor Android}
-  \begin{center}
-    \only<1>{
-      \includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android-signin}
-    }
-    \only<2>{
-      \includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android}
-    }
-  \end{center}
+  \only<1>{
+    \centering\includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android-signin}
+  }%
+  \only<2>{
+    \centering\includegraphics[width=0.8\textwidth,keepaspectratio]{multieditor-android}
+  }%
 \end{frame}
 
 \begin{frame}{Multieditor Web}
