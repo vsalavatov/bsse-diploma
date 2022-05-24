@@ -1,36 +1,182 @@
 \section{Примеры использования библиотеки}\label{usage-examples}
 
 \subsection{Сборка проекта}
-    Сборка проекта осуществляется с помощью системы автоматической сборки Gradle\cite{gradle} версии 7.1, используемая версия JDK --- OpenJDK 11. Скрипт сборки написан в файле \code{build.gradle.kts} в корне проекта. Используемая версия языка Kotlin --- 1.6.20.
+  Сборка проекта осуществляется с помощью системы автоматической сборки Gradle\cite{gradle} версии 7.1, используемая версия JDK --- OpenJDK 11. Сценарий сборки написан в файле \code{build.gradle.kts} в корне проекта. Используемая версия языка Kotlin --- 1.6.20.
 
-    Осуществить сборку и опубликовать артефакты в локальный maven-репозиторий можно с помощью команды \code{./gradlew publishToMavenLocal}.
+  Осуществить сборку и опубликовать артефакты в локальный maven-репозиторий можно с помощью команды \code{./gradlew publishToMavenLocal}.
 %subsection
 
 \subsection{Multieditor}
-    \subsubsection{Подключение библиотеки}
-        \todo{собираем либу, гредл команда, чтобы в локальный репозиторий артефакты попали}
+  Multieditor\cite{gh-multieditor} --- это мультиплатформенный текстовый редактор, доступный на платформах JVM, Android и Web и предоставляющий возможность использовать все три поддержанных ВФС: \code{SystemFS}, \code{GoogleDriveFS}, \code{SQLiteFS}.
 
-        \todo{что дописать в гредл}
-    % subsubsection
-    \subsubsection{Реализация бизнес-логики в общем модуле приложения}
-        \todo{ну тут понятно, что написано в \code{AppState.kt}}
-    % subsubsection
-    \subsubsection{Определение списка доступных хранилищ на каждой из целевых платформ}
-        \todo{тут что написано на каждой платформе и как}
-    % subsubsection
-    \subsubsection{Реализация клиентских приложений на разных платформах}
-        \todo{Общие слова про компоуз}
-        \paragraph{\todo{Клиент для платформ JVM и Android.}}
-        \paragraph{\todo{Клиент на платформе JS (browser).}}
-    % subsubsection
+  \subsubsection{Подключение библиотеки}
+    Подключение библиотеки \code{multifs} осуществляется через сценарий автоматической сборки в файле \code{build.gradle.kts}. Поскольку на текущий момент библиотека ещё не опубликована в популярных maven-репозиториях, используется локальный maven-репозиторий. В блок \code{dependencies} общего модуля проекта добавлена зависимость
+    \begin{minted}{kotlin}
+implementation("dev.salavatov:multifs:${Versions.multifs}").
+    \end{minted}
+    В модули для платформ jvm, android и js добавлена соотвествующая зависимость на платформоспецифичный артефакт этой библиотеки: \code{multifs-jvm}, \code{multifs-android} или \code{mutlifs-js}.
+  % subsubsection
+  \subsubsection{Реализация бизнес-логики в общем модуле приложения}
+    Вся основная логика приложения написана в файле \code{AppState.kt} в общем модуле.
+    Класс \code{AppState} содержит поля, представляющие состояние области ввода текста (информация о текущем файле, содержимое, происходит ли сохранение данных в текущий момент), дерева навигации (список доступных для подключения хранилищ, состояние деревьев подключенных виртуальных файловых систем), а также последней ошибки.
+
+    Этот класс также содержит собственную область видимости сопрограмм, диспетчеризацию которой осуществляет диспетчер сопрограмм, получаемый из функции \code{MultifsDispatcher()}~--- это функция, объявленная с помощью \code{expect/actual}-механизма. На платформах JVM и Android эта функция возвращает \code{Dispatchers.IO}, на платформе JS (browser)~---\\ \code{Dispatchers.Unconfined}. 
+
+    Определен метод \code{launchSafe}, который запускает произвольный\\ \code{suspend}-блок кода в упомянутой области видимости сопрограмм, при этом все исключения этого блока ловятся и сохраняются в поле \code{errorState} для возможности демонстрации ошибки пользователю.
+
+    С помощью этого метода уже реализуется непосредственно бизнес-логика приложения (10 функций), несколько из них для примера:
+
+    \begin{minted}[fontsize=\small]{kotlin}
+fun launchFileOpen(targetFile: File) =
+  launchSafe {
+    val contentBytes = targetFile.read()
+    if (!editor.saving) {
+      editor.content = contentBytes.decodeToString()
+      editor.file = targetFile
+    }
+  }
+    \end{minted}
+
+    \begin{minted}[fontsize=\small]{kotlin}
+fun launchInitializeStorage(namedStorageFactory: NamedStorageFactory) =
+  launchSafe {
+    val fs = namedStorageFactory.init()
+    val name = namedStorageFactory.name
+    navigation.availableStoragesState.remove(namedStorageFactory)
+    navigation.configuredStoragesState.add(
+      FileTree(
+        fs,
+        name,
+        FolderNode(fs.root, null, mutableStateListOf())
+     )
+    )
+  }
+    \end{minted}
+
+    В последней приведенной функции конструктор \code{FolderNode} имеет параметры: \code{Folder} из \code{multifs}, ссылка на родительский \code{FolderNode}, состояние списка дочерних узлов (оно обновляется при раскрытии/скрытии подробной информации этой папки).
+
+    Реализации графических интерфейсов для изменения состояния приложения вызывают только методы класса \code{AppState}.
+
+  % subsubsection
+  \subsubsection{Определение списка доступных хранилищ на каждой из целевых платформ}
+    Как можно было заметить в коде выше, бизнес-логика приложения работает со списком доступных хранилищ \code{navigation.availableStoragesState}. Для работы с хранилищами  в общем коде создан вспомогательный класс и синоним типа:
+    \begin{minted}[fontsize=\small]{kotlin}
+typealias Storage = VFS<out File, out Folder>
+class NamedStorageFactory(val name: String, val init: suspend () -> Storage)
+    \end{minted}
+
+    Получение списка доступных хранилищ на каждой платформе вынесено в функцию или класс:
+    \begin{minted}[fontsize=\small]{kotlin}
+// JVM
+fun makeStorageList(): List<NamedStorageFactory> {
+  val systemfs = NamedStorageFactory("Local device") { SystemFS() }
+  val gdfs = NamedStorageFactory("Google Drive") {
+    val googleAuth = CacheGoogleAuthorizationRequester(
+      HttpCallbackGoogleAuthorizationRequester(
+        GoogleAppCredentials(CLIENT_ID, SECRET),
+        GoogleDriveAPI.Companion.DriveScope.General
+      )
+    )
+    val gapi = GoogleDriveAPI(googleAuth)
+    GoogleDriveFS(gapi).also {
+      it.root.listFolder() // trigger auth
+    }
+  }
+  return listOf(systemfs, gdfs)
+}
+    \end{minted}
+    Вызов \code{listFolder} на корне ВФС Google Drive нужно, чтобы при инициализации хранилища сразу произошел запрос авторизации.
+    \begin{minted}[fontsize=\small]{kotlin}
+// JS
+fun makeStorageList(): List<NamedStorageFactory> {
+  val gdfs = NamedStorageFactory("Google.Drive") {
+    val googleAuth =
+      PopupGoogleAuthorizationRequester(
+        GoogleDriveAPI.Companion.DriveScope.General
+      )
+    val gapi = GoogleDriveAPI(googleAuth)
+    GoogleDriveFS(gapi).also {
+      it.root.listFolder() // trigger auth
+    }
+  }
+  return listOf(gdfs)
+}
+    \end{minted}
+    \begin{minted}[fontsize=\small]{kotlin}
+// Android
+class Storages(
+  private val googleAuth: IntentGoogleAuthorizationRequester,
+  private val sqliteFSDbHelper: SqliteFSDatabaseHelper,
+  private val systemFSRoot: Path
+) {
+  private val sqlite = NamedStorageFactory("SQLite") {
+      SqliteFS(sqliteFSDbHelper)
+  }
+
+  private val googleDrive = NamedStorageFactory("Google Drive") {
+    val gapi = GoogleDriveAPI(googleAuth)
+    GoogleDriveFS(gapi).also {
+        it.root.listFolder() // trigger auth
+    }
+  }
+
+  private val systemFS = NamedStorageFactory("Local") {
+    SystemFS(systemFSRoot)
+  }
+
+  fun asList(): List<NamedStorageFactory> {
+    return listOf(googleDrive, sqlite, systemFS)
+  }
+}
+    \end{minted}
+    В случае Android это реализовано в виде класса, который в конструкторе принимает необходимые для инициализации ВФС компоненты. Первый из них --- это экземпляр \code{IntentGoogleAuthorizationRequester}. Как было упомянуто в разделе~\ref{solution-details-gdrive-auth-req}, для создания экземпляра этого класса необходимо определить лямбда-функцию, которая запускает переданный в нее \code{Intent} и возвращает результат этого намерения. Клиент данного приложения для платформ JVM и Android написан с помощью мультиплатформенной библиотеки Compose\cite{gh-compose-jb}. С помощью средств этой библиотеки возможно реализовать создание экземпляра класса \code{IntentGoogleAuthorizationRequester}, не изменяя существующий код:
+    \begin{minted}[fontsize=\small]{kotlin}
+@Composable
+fun makeGoogleAuthorizationRequester(
+  googleAppCredentials: GoogleAppCredentials,
+  scope: GoogleDriveAPI.Companion.DriveScope
+): IntentGoogleAuthorizationRequester {
+  var resultFuture = remember { CompletableDeferred<ActivityResult>() }
+  val startForResult =
+    rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        resultFuture.complete(it)
+    }
+  return IntentGoogleAuthorizationRequester(
+    googleAppCredentials,
+    scope,
+    LocalContext.current,
+  ) { intent ->
+    resultFuture = CompletableDeferred<ActivityResult>()
+    startForResult.launch(intent)
+    resultFuture.await()
+  }
+}
+    \end{minted}
+    Как видно из листинга, используется аннотация \code{@Composable}, а также функция \code{rememberLauncherForActivityResult}. 
+    
+    Можно обойтись и стандартными средствами библиотеки Android, но возникнет необходимость переопределять методы класса \code{Activity} для обработки результатов запущенного намерения (\code{onActivityResult}), либо зарегистрировать \code{ActivityResultLauncher} в существующей \code{Activity}\\ (\code{registerForActivityResult}).
+    
+  % subsubsection
+  \subsubsection{Реализация клиентских приложений на разных платформах}
+    Для платформ JVM и Android код клиента с графическим интерфейсом пользователя написан в общем для них модуле с помощью библиотеки Compose\cite{gh-compose-jb}. Для платформы JS (browser) клиент реализован аналогично с помощью библиотеки Compose for Web.
+
+    При запуске приложения пользователю в меню навигации доступны несколько ВФС, которые можно подключить. При попытке подключить Google Drive открывается вкладка в браузере, где пользователю предлагается выбрать учетную запись Google (рисунок~\ref{fig:google-auth}). После выбора аккаунта можно пользоваться подключенной ВФС как обычной файловой системой (рисунок~\ref{fig:multieditor-jvm}). Пользователю доступен для использования весь функционал библиотеки (создание и удаление папок и файлов, просмотр файлов, их сохранение, перемещение, копирование).
+    
+    Тот же самый клиент доступен на платформе Android  (рисунки~\ref{fig:multieditor-android-signin}, \ref{fig:multieditor-android}, \ref{fig:multieditor-android-create-file}). Для платформы JS (browser) клиент выглядит слегка иначе, но предоставляет в точности те же самые возможности (рисунок~\ref{fig:multieditor-web}).
+
+    Для создания диалоговых окон библиотека Compose предоставляет \code{AlertDialog}, однако на текущий момент при его использовании возникают различные ошибки\cite{gh-compose-alert-dialog,gh-compose-alert-dialog-2}, поэтому используется своя обертка через \code{expect/actual}-механизм: на платформе JVM используется \code{Dialog} для создания нового системного окна с переопределенными декорациями, на Android --- тоже \code{Dialog}, но ввиду специфики код несколько отличается. Для JS (browser) в код страницы добавляется глобальный элемент модального окна, который управляется через модификацию содержимого и CSS-стили.
+  % subsubsection
 %subsection
 
 \subsection{gdrive-cli}
-    \subsubsection{Написание логики приложения с учетом нескольких типовых ограничений на функциональность VFS}
-        \todo{тут описать как писать логику, если нужна расширенная функциональность от вфс}
+  gdrive-cli\cite{gh-gdrive-cli} \todo{}
+  \subsubsection{Написание логики приложения с учетом нескольких типовых ограничений на функциональность VFS}
+    \todo{тут описать как писать логику, если нужна расширенная функциональность от вфс}
 
-        \todo{как написан runCli}
+    \todo{как написан runCli}
 
-        \todo{заодно как пользоваться StreamingIO}
-    %subsection
+    \todo{заодно как пользоваться StreamingIO}
+  %subsection
 %section
