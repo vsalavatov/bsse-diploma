@@ -171,12 +171,59 @@ fun makeGoogleAuthorizationRequester(
 %subsection
 
 \subsection{gdrive-cli}
-  gdrive-cli\cite{gh-gdrive-cli} \todo{}
+  gdrive-cli\cite{gh-gdrive-cli} --- это приложение, предоставляющее возможность работать с хранилищем Google Drive через интерфейс командной строки. Позволяет в том числе загружать и скачивать файлы в потоковом режиме. Писалось с целью проверки работоспособности данной функциональности.
+
   \subsubsection{Написание логики приложения с учетом нескольких типовых ограничений на функциональность VFS}
-    \todo{тут описать как писать логику, если нужна расширенная функциональность от вфс}
+    Логика приложения написана в функции \code{runCli}, имеющей следующую сигнатуру:
+    \begin{minted}[fontsize=\small]{kotlin}
+suspend fun <T> runCli(fs: VFS<out T, out Folder>)
+        where T : File, T : StreamingIO {
+  ...
+}
+    \end{minted}
+    Как видно по типу ВФС, данная функция может принимать не только\\ \code{GoogleDriveFS}, но также любую другую виртуальную файловую систему, класс файла которой реализует расширение \code{StreamingIO}.
 
-    \todo{как написан runCli}
+    Для примера разберем как реализована команда скачивания файла:
+    \begin{minted}[fontsize=\small]{kotlin}
+when (command) {      
+  // ...
+  is Download -> {
+    val node = list[command.index - 1] // Узел, который хотим скачать
+    // Проверяем, что мы хотим скачать файл, а не папку. Поскольку тип
+    // node - это VFSNode, необходимо приведение типов также к StreamingIO.
+    // Можно обойтись без явной проверки, поскольку файл класса точно 
+    // реализует это расширение. В данном случае с помощью этой проверки 
+    // срабатывает умное приведение типов Kotlin.
+    if (node !is File || node !is StreamingIO) 
+      throw Exception("cannot download a directory")
+    // Получаем канал, из которого можно читать содержимое файла
+    val dlStream = node.readStream()
+    // Определяем в какой файл записывать данные
+    val destPath = Paths.get(command.destPath)
+    if (destPath.exists()) {
+      destPath.deleteExisting()
+    }
+    val destFile = destPath.toFile()
+    while (!dlStream.isClosedForRead) {
+      // Пока в канале есть данные, считываем их по частям и дополняем
+      // файл, попутно логируем в консоль количество записанных байт
+      dlStream.read { buffer ->
+        print("\rbytes: ${dlStream.totalBytesRead}")
+        destFile.appendBytes(buffer.moveToByteArray())
+      }
+    }
+    // Пишем в консоль размер скачанного файла
+    println("\rtotal bytes downloaded: ${dlStream.totalBytesRead}")
+  }
+  // ...
+}
+    \end{minted}
 
-    \todo{заодно как пользоваться StreamingIO}
+    При использовании данной команды можно наблюдать, что в консоли в течение всего процесса скачивания обновляется сообщение о размере записанных байт. 
+    
+    Схожим образом написана команда загрузки данных в Google Drive. 
+
+    С помощью данной утилиты проверена функциональность потокового чтения и записи файлов для ВФС \code{GoogleDriveFS}: были несколько раз успешно загружены и скачаны файлы размером в 50 МиБ.
+
   %subsection
 %section
