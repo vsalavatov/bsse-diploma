@@ -9,6 +9,7 @@
 % Таблицы
 \usepackage{longtable}
 \usepackage{makecell}
+\usepackage{multirow}
 % Картинки (можно вставлять даже pdf)
 \usepackage[pdftex]{graphicx}
 
@@ -16,7 +17,7 @@
 \usepackage{textcomp}
 
 \usepackage{minted} % для примеров кода (требует параметра -shell-escape)
-%\usemintedstyle{bw}
+\usemintedstyle{bw}
 
 \usepackage{epigraph}
 
@@ -26,11 +27,11 @@
 
 \newcommand{\todo}[1]{\textbf{\textcolor{red}{(TODO: #1)}}}
 \newcommand{\code}[1]{\mbox{\texttt{#1}}}
-\newcommand{\makefig}[3]{
-  \begin{figure}[ht]
+\newcommand{\makefig}[4][ht]{
+  \begin{figure}[#1]
     \begin{center}
-      \includegraphics[width=#2,keepaspectratio]{#1}
-      \caption{#3}
+      \includegraphics[width=#3,keepaspectratio]{#2}
+      \caption{#4}
     \end{center}
   \end{figure}
 }
